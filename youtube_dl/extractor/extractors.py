@@ -337,7 +337,7 @@ from .facebook import (
     FacebookPluginsVideoIE,
 )
 from .faz import FazIE
-from .faustudon import FauStudonContentGroupIE
+from .faustudon import FauStudonContentGroupIE, FauStudonFolderIE
 from .fc2 import (
     FC2IE,
     FC2EmbedIE,

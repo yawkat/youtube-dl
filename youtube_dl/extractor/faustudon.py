@@ -115,3 +115,39 @@ class FauStudonContentGroupIE(InfoExtractor):
         }
 
         return playlist
+
+
+class FauStudonFolderIE(InfoExtractor):
+    _URL_FILE = r'ilias\.php\?ref_id=(?P<id>\d+)(&type=\w+)?(&expand=(?P<expand>-?\d+))?&cmd=view&cmdClass=ilobjfoldergui&cmdNode=yn:ou&baseClass=ilrepositorygui(#.*)?'
+    _VALID_URL = r'https://www\.studon\.fau\.de/studon/' + _URL_FILE
+
+    def _real_extract(self, url):
+        folder_id = self._match_id(url)
+        webpage = self._download_webpage(url, folder_id)
+
+        # expand all
+        for expander in re.finditer(self._URL_FILE.replace('&', '&amp;'), webpage):
+            expand_group = expander.group("expand")
+            if expand_group is not None and expand_group[0] != '-':
+                webpage = self._download_webpage(
+                    "https://www.studon.fau.de/studon/" + expander.group().replace('&amp;', '&'), folder_id)
+
+        videos = []
+        for item in re.finditer(
+                r'<a href="(ilias\.php\?baseClass=ilObjPluginDispatchGUI&amp;cmd=forward&amp;ref_id=(\d+)&amp;forwardCmd=showContents)" target=\'_top\'><img alt="Symbol H5P"',
+                webpage):
+            videos.append({
+                "_type": "url",
+                "id": item.group(2),
+                "url": "https://www.studon.fau.de/studon/" + item.group(1).replace('&amp;', '&')
+            })
+
+        grand_title_tag = self._search_regex("(<h1.*/h1>)", webpage, "grand_title_tag")
+        grand_title = clean_html(grand_title_tag).strip()
+
+        return {
+            "_type": "playlist",
+            "title": grand_title,
+            "entries": videos
+        }
+
